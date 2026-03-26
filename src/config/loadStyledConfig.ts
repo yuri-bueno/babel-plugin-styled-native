@@ -18,6 +18,7 @@ const reactNativeMock = {
 };
 
 let cachedTheme: Record<string, any> | null = null;
+let cachedDynamicTheme: Record<string, any> | null = null;
 
 /**
  * Executa fn() com:
@@ -96,10 +97,12 @@ export function loadStyledConfig(): Record<string, any> {
   if (cachedTheme !== null) return cachedTheme;
 
   const cwd = process.cwd();
-  const candidates = [
-    path.join(cwd, "styled.config.ts"),
-    path.join(cwd, "styled.config.js"),
-  ];
+  const candidates = process.env.STYLED_CONFIG_PATH
+    ? [process.env.STYLED_CONFIG_PATH]
+    : [
+        path.join(cwd, "styled.config.ts"),
+        path.join(cwd, "styled.config.js"),
+      ];
 
   for (const configPath of candidates) {
     if (!fs.existsSync(configPath)) continue;
@@ -116,8 +119,9 @@ export function loadStyledConfig(): Record<string, any> {
 
       if (theme) {
         cachedTheme = theme as Record<string, any>;
+        cachedDynamicTheme = (raw?.theme?.light ?? null) as Record<string, any> | null;
         console.log(`[styled-plugin] Config carregado de: ${configPath}`);
-        generateThemeTypes(cachedTheme, process.cwd());
+        generateThemeTypes(cachedTheme, (raw?.theme?.light ?? {}) as Record<string, unknown>, process.cwd());
         return cachedTheme;
       }
     } catch (e) {
@@ -130,4 +134,19 @@ export function loadStyledConfig(): Record<string, any> {
   );
   cachedTheme = {};
   return cachedTheme;
+}
+
+/**
+ * Verifica se um caminho (ex: ['colors', 'primary']) existe em theme.light.
+ * Usado para suprimir avisos de paths que são intencionalmente dinâmicos (light/dark).
+ */
+export function isDynamicThemePath(pathKeys: string[]): boolean {
+  loadStyledConfig(); // garante que cachedDynamicTheme foi populado
+  if (!cachedDynamicTheme) return false;
+  let node: any = cachedDynamicTheme;
+  for (const key of pathKeys) {
+    if (node === null || typeof node !== "object" || !(key in node)) return false;
+    node = node[key];
+  }
+  return true;
 }

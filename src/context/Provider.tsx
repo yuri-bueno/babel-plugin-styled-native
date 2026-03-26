@@ -1,4 +1,26 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
+function deepMerge<T extends Record<string, any>>(
+  base: T,
+  overrides: Record<string, any>,
+): T {
+  const result = { ...base } as Record<string, any>;
+  for (const key of Object.keys(overrides)) {
+    const ov = overrides[key];
+    if (ov !== undefined && ov !== null && typeof ov === "object" && !Array.isArray(ov)) {
+      result[key] = deepMerge(result[key] ?? {}, ov);
+    } else if (ov !== undefined) {
+      result[key] = ov;
+    }
+  }
+  return result as T;
+}
 import { Appearance, PixelRatio } from "react-native";
 import type { InferTheme } from "../config/createTheme";
 
@@ -25,7 +47,7 @@ export enum FontScaleMode {
 
 type StyledConfig = {
   tokens: object;
-  theme: { light: object; dark: object };
+  theme: { light: object; dark: object; highContrast?: object };
 };
 
 type ResolvedTheme<TConfig extends StyledConfig> = InferTheme<TConfig>;
@@ -60,11 +82,13 @@ export function UIProvider<TConfig extends StyledConfig>({
     Appearance.getColorScheme() === "dark" ? ThemeMode.DARK : ThemeMode.LIGHT;
 
   const [themeMode, setThemeMode] = useState<ThemeMode>(ThemeMode.SYSTEM);
-  const [resolvedMode, setResolvedMode] = useState<ThemeMode.LIGHT | ThemeMode.DARK>(
-    getSystemMode,
-  );
+  const [resolvedMode, setResolvedMode] = useState<
+    ThemeMode.LIGHT | ThemeMode.DARK
+  >(getSystemMode);
   const [highContrast, setHighContrast] = useState(false);
-  const [fontScaleMode, setFontScaleMode] = useState<FontScaleMode>(FontScaleMode.SYSTEM);
+  const [fontScaleMode, setFontScaleMode] = useState<FontScaleMode>(
+    FontScaleMode.SYSTEM,
+  );
   const [fontScale, setFontScale] = useState(() => PixelRatio.getFontScale());
 
   // Sincroniza com o sistema quando mode = SYSTEM
@@ -72,7 +96,9 @@ export function UIProvider<TConfig extends StyledConfig>({
     if (themeMode === ThemeMode.SYSTEM) {
       setResolvedMode(getSystemMode());
       const sub = Appearance.addChangeListener(({ colorScheme }) => {
-        setResolvedMode(colorScheme === "dark" ? ThemeMode.DARK : ThemeMode.LIGHT);
+        setResolvedMode(
+          colorScheme === "dark" ? ThemeMode.DARK : ThemeMode.LIGHT,
+        );
       });
       return () => sub.remove();
     } else {
@@ -89,10 +115,21 @@ export function UIProvider<TConfig extends StyledConfig>({
     }
   }, [fontScaleMode]);
 
-  const activeTheme = {
-    ...config.tokens,
-    ...(resolvedMode === ThemeMode.DARK ? config.theme.dark : config.theme.light),
-  } as ResolvedTheme<TConfig>;
+  const activeTheme = useMemo(() => {
+    const base = {
+      ...config.tokens,
+      ...(resolvedMode === ThemeMode.DARK ? config.theme.dark : config.theme.light),
+    } as ResolvedTheme<TConfig>;
+    if (highContrast && config.theme.highContrast) {
+      return deepMerge(base, config.theme.highContrast as Record<string, any>);
+    }
+    return base;
+  }, [resolvedMode, highContrast]);
+
+  // Loga tema ao trocar entre light/dark
+  useEffect(() => {
+    console.log(`[UIProvider] theme → ${resolvedMode}`, activeTheme);
+  }, [activeTheme]);
 
   const value: UIContextType<TConfig> = {
     theme: activeTheme,

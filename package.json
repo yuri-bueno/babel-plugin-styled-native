@@ -36,9 +36,15 @@
   },
   "typesVersions": {
     "*": {
-      "createTheme": ["./dist/config/createTheme.d.ts"],
-      "styled": ["./dist/runtime/Styled.d.ts"],
-      "context": ["./dist/context/Provider.d.ts"]
+      "createTheme": [
+        "./dist/config/createTheme.d.ts"
+      ],
+      "styled": [
+        "./dist/runtime/Styled.d.ts"
+      ],
+      "context": [
+        "./dist/context/Provider.d.ts"
+      ]
     }
   },
   "files": [
@@ -49,7 +55,9 @@
     "build": "tsc -p tsconfig.build.json",
     "prepare": "npm run build",
     "dev": "tsc -p tsconfig.build.json --watch",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "transform": "node dist/cli/runTransform.js",
+    "arroz": "npm run build && npm run transform test/input.tsx test/output.js test/styled.config.ts"
   },
   "engines": {
     "node": ">=16"

@@ -46,10 +46,12 @@ function valueToType(value: unknown, level = 0): string {
 // ─── Geração do arquivo .d.ts ─────────────────────────────────────────────────
 
 export function generateThemeTypes(
-  theme: Record<string, unknown>,
+  tokens: Record<string, unknown>,
+  lightTheme: Record<string, unknown>,
   projectRoot: string,
 ): void {
-  const themeType = valueToType(theme, 1);
+  const merged = { ...tokens, ...lightTheme };
+  const themeType = valueToType(merged, 1);
 
   const content = `${BANNER}
 export {};

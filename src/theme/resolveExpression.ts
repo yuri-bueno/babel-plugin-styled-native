@@ -3,6 +3,7 @@ import { isThemeAccess } from "../analyzer/isThemeAccess";
 import { extractThemePath } from "./extractThemePath";
 import { resolveThemePath } from "./resolveThemePath";
 import { astFromValue } from "./astFromValue";
+import { isDynamicThemePath } from "../config/loadStyledConfig";
 
 /** Evita spam: avisa cada caminho não-resolvido apenas uma vez por processo. */
 const warnedPaths = new Set<string>();
@@ -31,7 +32,7 @@ export function resolveExpression(node: t.Expression): t.Expression {
       return astFromValue(resolved);
     }
 
-    warnUnresolved(path);
+    if (!isDynamicThemePath(path)) warnUnresolved(path);
     return node;
   }
 

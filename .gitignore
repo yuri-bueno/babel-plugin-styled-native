@@ -5,3 +5,8 @@ dist/
 AGENT.md
 babel-plugin-styled-native-0.1.0.tgz
 expo-test-project-prompt.md
+styled-types.d.ts
+test/input.tsx
+test/output.js
+test/styled.config.ts
+test/useStyled.d.ts

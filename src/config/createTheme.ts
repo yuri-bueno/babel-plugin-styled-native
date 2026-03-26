@@ -2,6 +2,11 @@
 
 // ─── Tipos utilitários ────────────────────────────────────────────────────────
 
+/** Torna todas as propriedades de um objeto opcionais, recursivamente. */
+export type DeepPartial<T> = T extends object
+  ? { [K in keyof T]?: DeepPartial<T[K]> }
+  : T;
+
 /**
  * Merge de tokens com o tema ativo: chaves do tema sobrescrevem as dos tokens.
  * Ex: tokens = { colors: lightColors, spacing, ... }
@@ -98,11 +103,14 @@ export function createTheme<
   TTokens extends object,
   TLight extends object,
   TDark extends TLight, // TypeScript: dark deve ter pelo menos as chaves de light
+  THighContrast extends DeepPartial<TLight> = DeepPartial<TLight>,
 >(config: {
   tokens: TTokens;
   theme: {
     light: TLight;
     dark: EnsureSameStructure<TLight, TDark>;
+    /** Cores de alto contraste — sobrescrevem apenas as chaves presentes. */
+    highContrast?: THighContrast;
   };
 }) {
   const isValid = deepValidateKeys(
