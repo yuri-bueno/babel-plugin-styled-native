@@ -88,7 +88,7 @@ function withTsHandler<T>(fn: () => T): T {
 }
 
 /**
- * Procura `styled.config.ts` (ou `.js`) na raiz do projeto (process.cwd()),
+ * Procura `stampd.config.ts` (ou `.js`) na raiz do projeto (process.cwd()),
  * carrega dinamicamente e retorna `config.theme`.
  *
  * O resultado é cacheado — carrega apenas uma vez por processo.
@@ -100,8 +100,8 @@ export function loadStyledConfig(): Record<string, any> {
   const candidates = process.env.STYLED_CONFIG_PATH
     ? [process.env.STYLED_CONFIG_PATH]
     : [
-        path.join(cwd, "styled.config.ts"),
-        path.join(cwd, "styled.config.js"),
+        path.join(cwd, "stampd.config.ts"),
+        path.join(cwd, "stampd.config.js"),
       ];
 
   for (const configPath of candidates) {
@@ -122,17 +122,17 @@ export function loadStyledConfig(): Record<string, any> {
         const fonts = raw?.fonts ?? null;
         cachedTheme = fonts ? { ...tokens, fonts } : (tokens as Record<string, any>);
         cachedDynamicTheme = (raw?.theme?.light ?? null) as Record<string, any> | null;
-        console.log(`[styled-plugin] Config carregado de: ${configPath}`);
+        console.log(`[stampd] Config carregado de: ${configPath}`);
         generateThemeTypes(cachedTheme as Record<string, unknown>, (raw?.theme?.light ?? {}) as Record<string, unknown>, process.cwd());
         return cachedTheme!;
       }
     } catch (e) {
-      console.warn(`[styled-plugin] Falha ao carregar ${configPath}:`, e);
+      console.warn(`[stampd] Falha ao carregar ${configPath}:`, e);
     }
   }
 
   console.warn(
-    "[styled-plugin] styled.config.ts não encontrado — resolução de tema desabilitada",
+    "[stampd] stampd.config.ts não encontrado — resolução de tema desabilitada",
   );
   cachedTheme = {};
   return cachedTheme;

@@ -1,9 +1,9 @@
 import { NodePath, types as t } from "@babel/core";
 
-const CONTEXT_SOURCE = "babel-plugin-styled-native/context";
+const CONTEXT_SOURCE = "stampd/context";
 
 /**
- * Garante que useUI está importado de babel-plugin-styled-native/context.
+ * Garante que useStampdUI está importado de stampd/context.
  * Se o import já existe, adiciona o specifier. Caso contrário, cria o import.
  */
 export function ensureUseThemeImport(program: NodePath<t.Program>) {
@@ -13,7 +13,7 @@ export function ensureUseThemeImport(program: NodePath<t.Program>) {
     return node.specifiers.some(
       (s) =>
         t.isImportSpecifier(s) &&
-        t.isIdentifier(s.imported, { name: "useUI" }),
+        t.isIdentifier(s.imported, { name: "useStampdUI" }),
     );
   });
 
@@ -24,7 +24,7 @@ export function ensureUseThemeImport(program: NodePath<t.Program>) {
     if (!t.isImportDeclaration(node)) continue;
     if (node.source.value !== CONTEXT_SOURCE) continue;
     node.specifiers.push(
-      t.importSpecifier(t.identifier("useUI"), t.identifier("useUI")),
+      t.importSpecifier(t.identifier("useStampdUI"), t.identifier("useStampdUI")),
     );
     return;
   }
@@ -32,7 +32,7 @@ export function ensureUseThemeImport(program: NodePath<t.Program>) {
   // No context import found — add a new one
   program.node.body.unshift(
     t.importDeclaration(
-      [t.importSpecifier(t.identifier("useUI"), t.identifier("useUI"))],
+      [t.importSpecifier(t.identifier("useStampdUI"), t.identifier("useStampdUI"))],
       t.stringLiteral(CONTEXT_SOURCE),
     ),
   );

@@ -14,7 +14,7 @@ function warnUnresolved(pathKeys: string[]) {
   warnedPaths.add(key);
 
   console.warn(
-    `\x1b[33m[styled-plugin] ⚠️  theme.${key} não encontrado em styled.config.ts → será resolvido em runtime\x1b[0m`,
+    `\x1b[33m[stampd] ⚠️  theme.${key} não encontrado em stampd.config.ts → será resolvido em runtime\x1b[0m`,
   );
 }
 

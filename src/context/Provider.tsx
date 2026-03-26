@@ -77,7 +77,7 @@ type UIContextType<TConfig extends StyledConfig> = {
 
 const UIContext = createContext<UIContextType<StyledConfig> | null>(null);
 
-export function UIProvider<TConfig extends StyledConfig>({
+export function StampdUIProvider<TConfig extends StyledConfig>({
   children,
   config,
 }: {
@@ -157,8 +157,8 @@ export function UIProvider<TConfig extends StyledConfig>({
    HOOK
 ========================= */
 
-export function useUI<TConfig extends StyledConfig = StyledConfig>() {
+export function useStampdUI<TConfig extends StyledConfig = StyledConfig>() {
   const ctx = useContext(UIContext);
-  if (!ctx) throw new Error("useUI precisa estar dentro do UIProvider");
+  if (!ctx) throw new Error("useStampdUI must be used inside StampdUIProvider");
   return ctx as UIContextType<TConfig>;
 }

@@ -5,7 +5,7 @@ import { loadStyledConfig } from "../config/loadStyledConfig";
  * Resolve:
  * theme.colors.primary → '#FF0000'
  *
- * Usa o tema carregado de styled.config.ts na raiz do projeto.
+ * Usa o tema carregado de stampd.config.ts na raiz do projeto.
  */
 export function resolveThemePath(path: string[]): any {
   const theme = loadStyledConfig();

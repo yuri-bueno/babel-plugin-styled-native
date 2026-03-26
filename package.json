@@ -1,14 +1,16 @@
 {
-  "name": "babel-plugin-styled-native",
+  "name": "stampd",
   "version": "0.1.0",
-  "description": "Babel plugin that transforms Styled.X() declarations into React Native components at compile time, with theme token resolution.",
+  "description": "React Native styling stamped at compile time — design tokens resolved to literal values in your bundle, zero runtime overhead, light/dark/high-contrast built in.",
   "keywords": [
     "babel-plugin",
     "react-native",
     "expo",
     "styled",
+    "stampd",
     "theme",
-    "compile-time"
+    "compile-time",
+    "design-tokens"
   ],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -18,7 +20,7 @@
       "default": "./dist/index.js",
       "types": "./dist/index.d.ts"
     },
-    "./createTheme": {
+    "./theme": {
       "require": "./dist/config/createTheme.js",
       "default": "./dist/config/createTheme.js",
       "types": "./dist/config/createTheme.d.ts"
@@ -36,7 +38,7 @@
   },
   "typesVersions": {
     "*": {
-      "createTheme": [
+      "theme": [
         "./dist/config/createTheme.d.ts"
       ],
       "styled": [
@@ -56,19 +58,18 @@
     "prepare": "npm run build",
     "dev": "tsc -p tsconfig.build.json --watch",
     "prepublishOnly": "npm run build",
-    "transform": "node dist/cli/runTransform.js",
-    "arroz": "npm run build && npm run transform test/input.tsx test/output.js test/styled.config.ts"
+    "transform": "node dist/cli/runTransform.js"
   },
   "engines": {
     "node": ">=16"
   },
   "peerDependencies": {
     "@babel/core": ">=7",
-    "react": ">=18",
+    "react": ">=16.8",
     "react-native": ">=0.70"
   },
   "dependencies": {
-    "@babel/core": ">=7",
+    "@babel/generator": "^7.0.0",
     "@babel/plugin-transform-modules-commonjs": "^7.0.0",
     "@babel/preset-typescript": "^7.0.0",
     "@babel/traverse": "^7.0.0",
@@ -82,9 +83,13 @@
     "typescript": "^5.0.0"
   },
   "license": "MIT",
-  "author": "",
+  "author": {
+    "name": "Yuri Bueno",
+    "email": "yuri.bueno.dev@gmail.com",
+    "url": "https://github.com/yuri-bueno"
+  },
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "https://github.com/yuri-bueno/babel-plugin-styled-native"
   }
 }

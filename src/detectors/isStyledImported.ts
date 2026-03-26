@@ -2,17 +2,17 @@
 import { NodePath, types as t } from "@babel/core";
 
 /**
- * Verifica se existe import do Styled vindo de babel-plugin-styled-native
+ * Verifica se existe import do Styled vindo de stampd
  *
  * Exemplo válido:
- * import { Styled } from 'babel-plugin-styled-native/styled'
+ * import { Styled } from 'stampd/styled'
  */
 export function isStyledImported(program: NodePath<t.Program>): boolean {
   return program.node.body.some((node) => {
     if (!t.isImportDeclaration(node)) return false;
 
     // verifica se vem do pacote correto
-    const isCorrectSource = node.source.value.includes("babel-plugin-styled-native");
+    const isCorrectSource = node.source.value.includes("stampd");
     if (!isCorrectSource) return false;
 
     // verifica se importa Styled

@@ -18,7 +18,7 @@ import type {
   ImageStyle,
 } from "react-native";
 
-// Base vazia — augmentada pelo styled-types.d.ts gerado no projeto do usuário
+// Base vazia — augmentada pelo stampd-types.d.ts gerado no projeto do usuário
 declare global {
   namespace StyledSystem {
     interface Theme {}
@@ -67,7 +67,7 @@ export const Styled = new Proxy({} as StyledMap, {
   get: (_, componentName: string) => {
     return () => {
       throw new Error(
-        `[babel-plugin-styled-native] Styled.${componentName}() não foi transformado. ` +
+        `[stampd] Styled.${componentName}() não foi transformado. ` +
           `Verifique se o plugin está configurado no babel.config.js.`,
       );
     };

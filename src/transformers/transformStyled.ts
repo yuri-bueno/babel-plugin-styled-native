@@ -49,7 +49,7 @@ export function transformStyled(path: NodePath<t.CallExpression>) {
 
   if (style.type === "function") {
     // Se needsTheme: filtra "theme" dos params para não virar props.theme
-    // O `theme` ficará em escopo via useUI()
+    // O `theme` ficará em escopo via useStampdUI()
     const paramsToReplace = needsTheme
       ? style.params.filter((p) => p !== "theme")
       : style.params;
@@ -100,7 +100,7 @@ export function transformStyled(path: NodePath<t.CallExpression>) {
     /**
      * Gera:
      * (props) => {
-     *   const { theme } = useUI();
+     *   const { theme } = useStampdUI();
      *   return <View style={...} {...props} />;
      * }
      */
@@ -117,7 +117,7 @@ export function transformStyled(path: NodePath<t.CallExpression>) {
                 true,
               ),
             ]),
-            t.callExpression(t.identifier("useUI"), []),
+            t.callExpression(t.identifier("useStampdUI"), []),
           ),
         ]),
         t.returnStatement(jsxElement),

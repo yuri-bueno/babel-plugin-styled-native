@@ -60,13 +60,13 @@ function deepValidateKeys(
 
   if (missingInDark.length) {
     console.warn(
-      `\x1b[33m[createTheme] ⚠️  dark.${path} está FALTANDO: ${missingInDark.map((k) => `"${k}"`).join(", ")} (existe em light)\x1b[0m`,
+      `\x1b[33m[stampd] ⚠️  dark.${path} está FALTANDO: ${missingInDark.map((k) => `"${k}"`).join(", ")} (existe em light)\x1b[0m`,
     );
     valid = false;
   }
   if (extraInDark.length) {
     console.warn(
-      `\x1b[33m[createTheme] ⚠️  dark.${path} tem EXTRAS: ${extraInDark.map((k) => `"${k}"`).join(", ")} (não existe em light)\x1b[0m`,
+      `\x1b[33m[stampd] ⚠️  dark.${path} tem EXTRAS: ${extraInDark.map((k) => `"${k}"`).join(", ")} (não existe em light)\x1b[0m`,
     );
     valid = false;
   }
@@ -147,7 +147,7 @@ export function createTheme<
   );
 
   if (isValid) {
-    console.log("\x1b[32m[createTheme] ✅ Temas light/dark sincronizados\x1b[0m");
+    console.log("\x1b[32m[stampd] ✅ Temas light/dark sincronizados\x1b[0m");
   }
 
   return config;
