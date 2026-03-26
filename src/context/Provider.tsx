@@ -5,6 +5,8 @@ import React, {
   useMemo,
   useState,
 } from "react";
+import { Appearance, PixelRatio } from "react-native";
+import type { InferTheme } from "../config/createTheme";
 
 function deepMerge<T extends Record<string, any>>(
   base: T,
@@ -26,8 +28,6 @@ function deepMerge<T extends Record<string, any>>(
   }
   return result as T;
 }
-import { Appearance, PixelRatio } from "react-native";
-import type { InferTheme } from "../config/createTheme";
 
 /* =========================
    ENUMS
@@ -44,6 +44,13 @@ export enum FontScaleMode {
   FIXED_1 = 1,
   FIXED_1_5 = 1.5,
   FIXED_2 = 2,
+}
+
+// Base vazia — augmentada pelo stampd-types.d.ts gerado no projeto do usuário
+declare global {
+  namespace StyledSystem {
+    interface Theme {}
+  }
 }
 
 /* =========================
@@ -157,8 +164,12 @@ export function StampdUIProvider<TConfig extends StyledConfig>({
    HOOK
 ========================= */
 
-export function useStampdUI<TConfig extends StyledConfig = StyledConfig>() {
+type StampdUIReturn = Omit<UIContextType<StyledConfig>, "theme"> & {
+  theme: StyledSystem.Theme;
+};
+
+export function useStampdUI(): StampdUIReturn {
   const ctx = useContext(UIContext);
   if (!ctx) throw new Error("useStampdUI must be used inside StampdUIProvider");
-  return ctx as UIContextType<TConfig>;
+  return ctx as unknown as StampdUIReturn;
 }
