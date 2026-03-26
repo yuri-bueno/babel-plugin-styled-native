@@ -50,6 +50,7 @@
     "@types/babel__core": "^7.0.0",
     "@types/babel__traverse": "^7.0.0",
     "@types/node": "^20.0.0",
+    "@types/react": "^19.2.14",
     "typescript": "^5.0.0"
   },
   "license": "MIT",
