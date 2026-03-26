@@ -1,0 +1,123 @@
+import * as fs from "fs";
+import * as path from "path";
+import * as babelCore from "@babel/core";
+import { generateThemeTypes } from "./generateTypes";
+
+// `_compile` e `_load` são internos ao Node mas não estão nos tipos públicos
+type NodeModuleWithCompile = NodeModule & {
+  _compile(code: string, filename: string): void;
+};
+
+// Mock mínimo de react-native para não quebrar módulos que o importam
+const reactNativeMock = {
+  Platform: {
+    OS: "ios" as const,
+    select: (obj: any) => ({ __platformSelect: true, options: obj }),
+  },
+  StyleSheet: { create: (s: any) => s },
+};
+
+let cachedTheme: Record<string, any> | null = null;
+
+/**
+ * Executa fn() com:
+ * - Handlers de `.ts`/`.tsx` que transpilam TypeScript via @babel/core
+ * - Mock de `react-native` para evitar erros em tokens de design que importam Platform
+ */
+function withTsHandler<T>(fn: () => T): T {
+  const NodeModule = require("module") as any;
+
+  // Salva handlers anteriores
+  const prevExt = {
+    ".ts": (require.extensions as any)[".ts"],
+    ".tsx": (require.extensions as any)[".tsx"],
+  };
+
+  // Salva _load original para restaurar depois
+  const originalLoad = NodeModule._load.bind(NodeModule);
+
+  // Handler que transpila TS → CJS via Babel
+  const tsHandler = (m: NodeModuleWithCompile, filename: string) => {
+    const code = fs.readFileSync(filename, "utf-8");
+    const result = babelCore.transformSync(code, {
+      filename,
+      configFile: false,
+      babelrc: false,
+      presets: ["@babel/preset-typescript"],
+      plugins: ["@babel/plugin-transform-modules-commonjs"],
+      sourceType: "module",
+    });
+    if (result?.code) {
+      m._compile(result.code, filename);
+    }
+  };
+
+  // Intercepta require('react-native') para devolver mock
+  NodeModule._load = function (
+    request: string,
+    parent: any,
+    isMain: boolean,
+  ) {
+    if (request === "react-native") return reactNativeMock;
+    return originalLoad(request, parent, isMain);
+  };
+
+  (require.extensions as any)[".ts"] = tsHandler;
+  (require.extensions as any)[".tsx"] = tsHandler;
+
+  try {
+    return fn();
+  } finally {
+    NodeModule._load = originalLoad;
+    if (prevExt[".ts"]) (require.extensions as any)[".ts"] = prevExt[".ts"];
+    else delete (require.extensions as any)[".ts"];
+    if (prevExt[".tsx"]) (require.extensions as any)[".tsx"] = prevExt[".tsx"];
+    else delete (require.extensions as any)[".tsx"];
+  }
+}
+
+/**
+ * Procura `styled.config.ts` (ou `.js`) na raiz do projeto (process.cwd()),
+ * carrega dinamicamente e retorna `config.theme`.
+ *
+ * O resultado é cacheado — carrega apenas uma vez por processo.
+ */
+export function loadStyledConfig(): Record<string, any> {
+  if (cachedTheme !== null) return cachedTheme;
+
+  const cwd = process.cwd();
+  const candidates = [
+    path.join(cwd, "styled.config.ts"),
+    path.join(cwd, "styled.config.js"),
+  ];
+
+  for (const configPath of candidates) {
+    if (!fs.existsSync(configPath)) continue;
+
+    try {
+      // Garante leitura fresca (sem cache de run anterior)
+      delete require.cache[configPath];
+
+      const mod = withTsHandler(() => require(configPath));
+      const raw = mod?.config ?? mod?.default?.config ?? mod;
+      // Novo formato: createTheme({ tokens, theme }) → usa tokens para compile-time
+      // Formato legado: export const config = { theme: { spacing, ... } } → usa theme
+      const theme = raw?.tokens ?? raw?.theme ?? null;
+
+      if (theme) {
+        cachedTheme = theme as Record<string, any>;
+        console.log(`[styled-plugin] Config carregado de: ${configPath}`);
+        generateThemeTypes(cachedTheme, process.cwd());
+        return cachedTheme;
+      }
+    } catch (e) {
+      console.warn(`[styled-plugin] Falha ao carregar ${configPath}:`, e);
+    }
+  }
+
+  console.warn(
+    "[styled-plugin] styled.config.ts não encontrado — resolução de tema desabilitada",
+  );
+  cachedTheme = {};
+  return cachedTheme;
+}

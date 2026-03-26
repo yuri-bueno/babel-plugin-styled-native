@@ -1,0 +1,61 @@
+{
+  "name": "babel-plugin-styled-native",
+  "version": "0.1.0",
+  "description": "Babel plugin that transforms Styled.X() declarations into React Native components at compile time, with theme token resolution.",
+  "keywords": [
+    "babel-plugin",
+    "react-native",
+    "expo",
+    "styled",
+    "theme",
+    "compile-time"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./createTheme": {
+      "require": "./dist/config/createTheme.js",
+      "types": "./dist/config/createTheme.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsc -p tsconfig.build.json --watch",
+    "prepublishOnly": "npm run build"
+  },
+  "engines": {
+    "node": ">=16"
+  },
+  "peerDependencies": {
+    "@babel/core": ">=7",
+    "react": ">=18",
+    "react-native": ">=0.70"
+  },
+  "dependencies": {
+    "@babel/core": ">=7",
+    "@babel/plugin-transform-modules-commonjs": "^7.0.0",
+    "@babel/preset-typescript": "^7.0.0",
+    "@babel/traverse": "^7.0.0",
+    "@babel/types": "^7.0.0"
+  },
+  "devDependencies": {
+    "@types/babel__core": "^7.0.0",
+    "@types/babel__traverse": "^7.0.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "license": "MIT",
+  "author": "",
+  "repository": {
+    "type": "git",
+    "url": ""
+  }
+}
