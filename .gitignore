@@ -2,3 +2,6 @@ node_modules/
 dist/
 *.tsbuildinfo
 .DS_Store
+AGENT.md
+babel-plugin-styled-native-0.1.0.tgz
+expo-test-project-prompt.md

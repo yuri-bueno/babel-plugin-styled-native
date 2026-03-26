@@ -110,7 +110,7 @@ function getDeclarationName(
  * Transforma Styled.X({...}) com variants:
  *
  * - Resolve tema em hardcode onde possível (styled.config.ts)
- * - Emite `useTheme` e `(theme) => ({...})` SOMENTE quando necessário
+ * - Emite `useUI` e `(theme) => ({...})` SOMENTE quando necessário
  *
  * Caso tudo resolva:
  *   const __baseStyle_X = {...};
@@ -120,7 +120,7 @@ function getDeclarationName(
  * Caso haja valores runtime:
  *   const __baseStyle_X = (theme) => ({...});
  *   const __variants_X = { variant: { outline: (theme) => ({...}) } };
- *   const X = (props) => { const { theme } = useTheme(); ... };
+ *   const X = (props) => { const { theme } = useUI(); ... };
  */
 export function transformStyledWithVariants(
   path: NodePath<t.CallExpression>,
@@ -215,7 +215,7 @@ export function transformStyledWithVariants(
 
   const bodyStatements: t.Statement[] = [];
 
-  // useTheme só entra se necessário
+  // useUI só entra se necessário
   if (anyNeedsTheme) {
     bodyStatements.push(
       t.variableDeclaration("const", [
@@ -228,7 +228,7 @@ export function transformStyledWithVariants(
               true,
             ),
           ]),
-          t.callExpression(t.identifier("useTheme"), []),
+          t.callExpression(t.identifier("useUI"), []),
         ),
       ]),
     );

@@ -52,13 +52,23 @@ function withTsHandler<T>(fn: () => T): T {
     }
   };
 
-  // Intercepta require('react-native') para devolver mock
+  // Intercepta react-native e pacotes Expo que não existem em Node.js
+  const mockedModules = new Set([
+    "react-native",
+    "expo-asset",
+    "expo-modules-core",
+    "expo-font",
+    "react-native/Libraries/Utilities/Platform",
+  ]);
+
   NodeModule._load = function (
     request: string,
     parent: any,
     isMain: boolean,
   ) {
-    if (request === "react-native") return reactNativeMock;
+    if (request === "react-native" || request.startsWith("react-native/"))
+      return reactNativeMock;
+    if (mockedModules.has(request)) return {};
     return originalLoad(request, parent, isMain);
   };
 

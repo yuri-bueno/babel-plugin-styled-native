@@ -15,11 +15,30 @@
   "exports": {
     ".": {
       "require": "./dist/index.js",
+      "default": "./dist/index.js",
       "types": "./dist/index.d.ts"
     },
     "./createTheme": {
       "require": "./dist/config/createTheme.js",
+      "default": "./dist/config/createTheme.js",
       "types": "./dist/config/createTheme.d.ts"
+    },
+    "./styled": {
+      "require": "./dist/runtime/Styled.js",
+      "default": "./dist/runtime/Styled.js",
+      "types": "./dist/runtime/Styled.d.ts"
+    },
+    "./context": {
+      "require": "./dist/context/Provider.js",
+      "default": "./dist/context/Provider.js",
+      "types": "./dist/context/Provider.d.ts"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "createTheme": ["./dist/config/createTheme.d.ts"],
+      "styled": ["./dist/runtime/Styled.d.ts"],
+      "context": ["./dist/context/Provider.d.ts"]
     }
   },
   "files": [
@@ -28,6 +47,7 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
+    "prepare": "npm run build",
     "dev": "tsc -p tsconfig.build.json --watch",
     "prepublishOnly": "npm run build"
   },

@@ -1,37 +1,39 @@
 import { NodePath, types as t } from "@babel/core";
 
+const CONTEXT_SOURCE = "babel-plugin-styled-native/context";
+
 /**
- * Garante que useTheme está importado de @/theme/useStyled.
+ * Garante que useUI está importado de babel-plugin-styled-native/context.
  * Se o import já existe, adiciona o specifier. Caso contrário, cria o import.
  */
 export function ensureUseThemeImport(program: NodePath<t.Program>) {
   const alreadyImported = program.node.body.some((node) => {
     if (!t.isImportDeclaration(node)) return false;
-    if (!node.source.value.includes("useStyled")) return false;
+    if (node.source.value !== CONTEXT_SOURCE) return false;
     return node.specifiers.some(
       (s) =>
         t.isImportSpecifier(s) &&
-        t.isIdentifier(s.imported, { name: "useTheme" }),
+        t.isIdentifier(s.imported, { name: "useUI" }),
     );
   });
 
   if (alreadyImported) return;
 
-  // Add to existing useStyled import if present
+  // Add to existing context import if present
   for (const node of program.node.body) {
     if (!t.isImportDeclaration(node)) continue;
-    if (!node.source.value.includes("useStyled")) continue;
+    if (node.source.value !== CONTEXT_SOURCE) continue;
     node.specifiers.push(
-      t.importSpecifier(t.identifier("useTheme"), t.identifier("useTheme")),
+      t.importSpecifier(t.identifier("useUI"), t.identifier("useUI")),
     );
     return;
   }
 
-  // No useStyled import found — add a new one
+  // No context import found — add a new one
   program.node.body.unshift(
     t.importDeclaration(
-      [t.importSpecifier(t.identifier("useTheme"), t.identifier("useTheme"))],
-      t.stringLiteral("@/theme/useStyled"),
+      [t.importSpecifier(t.identifier("useUI"), t.identifier("useUI"))],
+      t.stringLiteral(CONTEXT_SOURCE),
     ),
   );
 }
