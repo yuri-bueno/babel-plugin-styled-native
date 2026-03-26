@@ -102,6 +102,8 @@ export function loadStyledConfig(): Record<string, any> {
     : [
         path.join(cwd, "stampd.config.ts"),
         path.join(cwd, "stampd.config.js"),
+        path.join(cwd, "src", "stampd.config.ts"),
+        path.join(cwd, "src", "stampd.config.js"),
       ];
 
   for (const configPath of candidates) {
