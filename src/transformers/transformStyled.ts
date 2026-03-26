@@ -3,11 +3,13 @@ import { NodePath, types as t } from "@babel/core";
 import { getStyledConfig } from "../extractors/getStyledConfig";
 import { extractStyle } from "../extractors/extractStyle";
 import { extractVariants } from "../extractors/extractVariants";
+import { extractAttrs } from "../extractors/extractAttrs";
 import { resolveThemeInStyle } from "../theme/resolveThemeInStyle";
 import { ensureReactNativeImport, ensurePlatformImport, ensureUseThemeImport } from "../utils/ensureImport";
 import { nodeHasPlatformSelect } from "../utils/nodeHasPlatformSelect";
 import { nodeHasThemeAccess } from "../utils/nodeHasThemeAccess";
 import { replaceParamWithProps } from "../utils/replaceParamWithProps";
+import { buildDefaultFontStyle } from "../utils/defaultFontStyle";
 import { transformStyledWithVariants } from "./transformStyledWithVariants";
 
 /**
@@ -28,10 +30,12 @@ export function transformStyled(path: NodePath<t.CallExpression>) {
   const style = extractStyle(config);
   if (!style) return;
 
+  const attrs = extractAttrs(config);
+
   // Se houver variants, delega para o transformer especializado
   const variants = extractVariants(config);
   if (variants) {
-    transformStyledWithVariants(path, componentName.node.name, style, variants);
+    transformStyledWithVariants(path, componentName.node.name, style, variants, attrs);
     return;
   }
 
@@ -60,13 +64,26 @@ export function transformStyled(path: NodePath<t.CallExpression>) {
     if (needsTheme) ensureUseThemeImport(program);
   }
 
+  // Resolve tema em attrs (se houver) e constrói o spread
+  const attrsAttributes: t.JSXSpreadAttribute[] = [];
+  if (attrs) {
+    resolveThemeInStyle(attrs.node);
+    attrsAttributes.push(t.jsxSpreadAttribute(attrs.node));
+  }
+
+  const defaultFont = buildDefaultFontStyle(componentName.node.name);
+  const styleValue = defaultFont
+    ? t.arrayExpression([defaultFont, styleNode])
+    : styleNode;
+
   const jsxElement = t.jsxElement(
     t.jsxOpeningElement(
       t.jsxIdentifier(componentName.node.name),
       [
+        ...attrsAttributes,
         t.jsxAttribute(
           t.jsxIdentifier("style"),
-          t.jsxExpressionContainer(styleNode),
+          t.jsxExpressionContainer(styleValue),
         ),
         t.jsxSpreadAttribute(t.identifier("props")),
       ],

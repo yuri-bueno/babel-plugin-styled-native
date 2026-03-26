@@ -8,18 +8,32 @@ export type DeepPartial<T> = T extends object
   : T;
 
 /**
+ * Shape esperado de `fonts` no config.
+ * - `default`: fonte e tamanho padrão da aplicação
+ * - `sizes`: escala de tamanhos nomeados (ex: sm, md, lg)
+ * - `family`: famílias de fontes nomeadas (ex: inter, mono)
+ */
+export type FontsConfig<
+  TSizes extends Record<string, number> = Record<string, number>,
+  TFamily extends Record<string, string> = Record<string, string>,
+> = {
+  default?: { size?: number; family?: string };
+  sizes?: TSizes;
+  family?: TFamily;
+};
+
+/**
  * Merge de tokens com o tema ativo: chaves do tema sobrescrevem as dos tokens.
- * Ex: tokens = { colors: lightColors, spacing, ... }
- *     theme.light = { colors: lightColors }
- *     → AppTheme = { colors: lightColors | darkColors, spacing, radius, ... }
+ * `fonts` é adicionado como `theme.fonts` (estático, não muda com light/dark).
  */
 export type InferTheme<T> = T extends {
   tokens: infer Tok;
   theme: { light: infer L };
+  fonts?: infer F;
 }
   ? Tok extends object
     ? L extends object
-      ? Omit<Tok, keyof L> & L
+      ? Omit<Tok, keyof L> & L & (F extends object ? { fonts: F } : {})
       : Tok
     : never
   : never;
@@ -102,16 +116,29 @@ function deepValidateKeys(
 export function createTheme<
   TTokens extends object,
   TLight extends object,
-  TDark extends TLight, // TypeScript: dark deve ter pelo menos as chaves de light
-  THighContrast extends DeepPartial<TLight> = DeepPartial<TLight>,
+  TDark extends TLight,
+  TFonts extends FontsConfig = FontsConfig,
 >(config: {
   tokens: TTokens;
   theme: {
     light: TLight;
     dark: EnsureSameStructure<TLight, TDark>;
-    /** Cores de alto contraste — sobrescrevem apenas as chaves presentes. */
-    highContrast?: THighContrast;
+    /**
+     * Sobrescreve cores para alto contraste — apenas as chaves presentes são aplicadas.
+     * Cada propriedade é opcional (DeepPartial do light theme).
+     */
+    highContrast?: DeepPartial<TLight>;
   };
+  /**
+   * Configuração de fontes estáticas — acessível como `theme.fonts`.
+   * @example
+   * fonts: {
+   *   default: { size: 14, family: "Inter" },
+   *   sizes:   { sm: 12, md: 14, lg: 16 },
+   *   family:  { inter: "Inter", mono: "JetBrainsMono" },
+   * }
+   */
+  fonts?: TFonts;
 }) {
   const isValid = deepValidateKeys(
     config.theme.light as Record<string, unknown>,

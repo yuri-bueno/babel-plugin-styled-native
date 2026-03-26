@@ -113,16 +113,18 @@ export function loadStyledConfig(): Record<string, any> {
 
       const mod = withTsHandler(() => require(configPath));
       const raw = mod?.config ?? mod?.default?.config ?? mod;
-      // Novo formato: createTheme({ tokens, theme }) → usa tokens para compile-time
+      // Novo formato: createTheme({ tokens, theme, fonts }) → usa tokens para compile-time
       // Formato legado: export const config = { theme: { spacing, ... } } → usa theme
-      const theme = raw?.tokens ?? raw?.theme ?? null;
+      const tokens = raw?.tokens ?? raw?.theme ?? null;
 
-      if (theme) {
-        cachedTheme = theme as Record<string, any>;
+      if (tokens) {
+        // Inclui fonts em cachedTheme para que theme.fonts.* seja resolvido em compile-time
+        const fonts = raw?.fonts ?? null;
+        cachedTheme = fonts ? { ...tokens, fonts } : (tokens as Record<string, any>);
         cachedDynamicTheme = (raw?.theme?.light ?? null) as Record<string, any> | null;
         console.log(`[styled-plugin] Config carregado de: ${configPath}`);
-        generateThemeTypes(cachedTheme, (raw?.theme?.light ?? {}) as Record<string, unknown>, process.cwd());
-        return cachedTheme;
+        generateThemeTypes(cachedTheme as Record<string, unknown>, (raw?.theme?.light ?? {}) as Record<string, unknown>, process.cwd());
+        return cachedTheme!;
       }
     } catch (e) {
       console.warn(`[styled-plugin] Falha ao carregar ${configPath}:`, e);

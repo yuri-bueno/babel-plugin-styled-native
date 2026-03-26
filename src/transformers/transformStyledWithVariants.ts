@@ -2,10 +2,12 @@
 import { NodePath, types as t } from "@babel/core";
 import { ExtractedStyle } from "../extractors/extractStyle";
 import { ExtractedVariants } from "../extractors/extractVariants";
+import { ExtractedAttrs } from "../extractors/extractAttrs";
 import { resolveThemeInStyle } from "../theme/resolveThemeInStyle";
 import { nodeHasThemeAccess } from "../utils/nodeHasThemeAccess";
 import { ensureReactNativeImport, ensureUseThemeImport, ensurePlatformImport } from "../utils/ensureImport";
 import { nodeHasPlatformSelect } from "../utils/nodeHasPlatformSelect";
+import { buildDefaultFontStyle } from "../utils/defaultFontStyle";
 
 /**
  * Normaliza ({ theme }) => ({...}) para (theme) => ({...})
@@ -127,6 +129,7 @@ export function transformStyledWithVariants(
   componentName: string,
   style: ExtractedStyle,
   variants: ExtractedVariants,
+  attrs: ExtractedAttrs | null = null,
 ) {
   const varName = getDeclarationName(path, componentName);
   const baseStyleName = `__baseStyle_${varName}`;
@@ -140,7 +143,24 @@ export function transformStyledWithVariants(
   // ── 2. Resolve variants e verifica por grupo ─────────────────────────────
   const { ast: variantsAst, groupNeedsTheme } = buildNormalizedVariantsAST(variants.path);
   const anyVariantNeedsTheme = Object.values(groupNeedsTheme).some(Boolean);
-  const anyNeedsTheme = baseNeedsTheme || anyVariantNeedsTheme;
+
+  // ── 2b. Resolve attrs ────────────────────────────────────────────────────
+  const attrsName = `__attrs_${varName}`;
+  let attrsDecl: t.VariableDeclaration | null = null;
+  let attrsNeedsTheme = false;
+
+  if (attrs) {
+    resolveThemeInStyle(attrs.node);
+    attrsNeedsTheme = nodeHasThemeAccess(attrs.node);
+    const attrsValue = attrsNeedsTheme
+      ? t.arrowFunctionExpression([t.identifier("theme")], attrs.node)
+      : attrs.node;
+    attrsDecl = t.variableDeclaration("const", [
+      t.variableDeclarator(t.identifier(attrsName), attrsValue),
+    ]);
+  }
+
+  const anyNeedsTheme = baseNeedsTheme || anyVariantNeedsTheme || attrsNeedsTheme;
 
   // ── 3. __baseStyle_X: função ou plain object ─────────────────────────────
   const baseStyleValue = baseNeedsTheme
@@ -162,7 +182,9 @@ export function transformStyledWithVariants(
     ? t.callExpression(t.identifier(baseStyleName), [t.identifier("theme")])
     : t.identifier(baseStyleName);
 
+  const defaultFont = buildDefaultFontStyle(componentName);
   const styleArrayElements: t.Expression[] = [
+    ...(defaultFont ? [defaultFont] : []),
     baseStyleRef,
     ...variantKeys.map((key) => {
       const lookup = t.memberExpression(
@@ -199,6 +221,15 @@ export function transformStyledWithVariants(
       t.jsxOpeningElement(
         t.jsxIdentifier(componentName),
         [
+          ...(attrs
+            ? [
+                t.jsxSpreadAttribute(
+                  attrsNeedsTheme
+                    ? t.callExpression(t.identifier(attrsName), [t.identifier("theme")])
+                    : t.identifier(attrsName),
+                ),
+              ]
+            : []),
           t.jsxSpreadAttribute(t.identifier("rest")),
           t.jsxAttribute(
             t.jsxIdentifier("style"),
@@ -244,7 +275,9 @@ export function transformStyledWithVariants(
   // ── 7. Hoist + imports ───────────────────────────────────────────────────
   const statementParent = path.getStatementParent();
   if (statementParent) {
-    statementParent.insertBefore([baseStyleDecl, variantsDecl]);
+    const hoisted: t.VariableDeclaration[] = [baseStyleDecl, variantsDecl];
+    if (attrsDecl) hoisted.push(attrsDecl);
+    statementParent.insertBefore(hoisted);
   }
 
   const program = path.findParent((p) => p.isProgram());

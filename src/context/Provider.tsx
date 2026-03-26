@@ -13,7 +13,12 @@ function deepMerge<T extends Record<string, any>>(
   const result = { ...base } as Record<string, any>;
   for (const key of Object.keys(overrides)) {
     const ov = overrides[key];
-    if (ov !== undefined && ov !== null && typeof ov === "object" && !Array.isArray(ov)) {
+    if (
+      ov !== undefined &&
+      ov !== null &&
+      typeof ov === "object" &&
+      !Array.isArray(ov)
+    ) {
       result[key] = deepMerge(result[key] ?? {}, ov);
     } else if (ov !== undefined) {
       result[key] = ov;
@@ -48,6 +53,7 @@ export enum FontScaleMode {
 type StyledConfig = {
   tokens: object;
   theme: { light: object; dark: object; highContrast?: object };
+  fonts?: object;
 };
 
 type ResolvedTheme<TConfig extends StyledConfig> = InferTheme<TConfig>;
@@ -118,18 +124,16 @@ export function UIProvider<TConfig extends StyledConfig>({
   const activeTheme = useMemo(() => {
     const base = {
       ...config.tokens,
-      ...(resolvedMode === ThemeMode.DARK ? config.theme.dark : config.theme.light),
+      ...(resolvedMode === ThemeMode.DARK
+        ? config.theme.dark
+        : config.theme.light),
+      ...(config.fonts ? { fonts: config.fonts } : {}),
     } as ResolvedTheme<TConfig>;
     if (highContrast && config.theme.highContrast) {
       return deepMerge(base, config.theme.highContrast as Record<string, any>);
     }
     return base;
   }, [resolvedMode, highContrast]);
-
-  // Loga tema ao trocar entre light/dark
-  useEffect(() => {
-    console.log(`[UIProvider] theme → ${resolvedMode}`, activeTheme);
-  }, [activeTheme]);
 
   const value: UIContextType<TConfig> = {
     theme: activeTheme,
