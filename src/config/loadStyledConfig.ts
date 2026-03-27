@@ -9,12 +9,25 @@ type NodeModuleWithCompile = NodeModule & {
 };
 
 // Mock mínimo de react-native para não quebrar módulos que o importam
+// Dimensions.get retorna um tamanho base representativo (375×812 = iPhone 14)
+// — usado para que libs como react-native-responsive-fontsize não crashem,
+// mas valores de RFValue calculados aqui serão literais fixos no bundle.
 const reactNativeMock = {
   Platform: {
     OS: "ios" as const,
     select: (obj: any) => ({ __platformSelect: true, options: obj }),
   },
   StyleSheet: { create: (s: any) => s },
+  Dimensions: {
+    get: (_dim: string) => ({ width: 375, height: 812, scale: 1, fontScale: 1 }),
+    addEventListener: () => ({ remove: () => {} }),
+  },
+  PixelRatio: {
+    get: () => 2,
+    getFontScale: () => 1,
+    getPixelSizeForLayoutSize: (size: number) => size * 2,
+    roundToNearestPixel: (size: number) => size,
+  },
 };
 
 let cachedTheme: Record<string, any> | null = null;
@@ -70,7 +83,56 @@ function withTsHandler<T>(fn: () => T): T {
     if (request === "react-native" || request.startsWith("react-native/"))
       return reactNativeMock;
     if (mockedModules.has(request)) return {};
-    return originalLoad(request, parent, isMain);
+
+    try {
+      return originalLoad(request, parent, isMain);
+    } catch (err: any) {
+      // Node 22+: require() de módulos ESM que importam TypeScript pode falhar
+      // com SyntaxError ("Unexpected token") porque o loader ESM não passa pelo
+      // nosso tsHandler. Tentamos compilar o arquivo manualmente com Babel.
+      const isSyntaxError = err instanceof SyntaxError;
+      const isEsmError = err?.code === "ERR_REQUIRE_ESM";
+
+      if (isSyntaxError || isEsmError) {
+        try {
+          const NodeModuleClass = require("module") as any;
+          const resolved: string = NodeModuleClass._resolveFilename(
+            request,
+            parent,
+            false,
+          );
+
+          if (/\.[cm]?[tj]sx?$/.test(resolved) && !require.cache[resolved]) {
+            const code = fs.readFileSync(resolved, "utf-8");
+            const result = babelCore.transformSync(code, {
+              filename: resolved,
+              configFile: false,
+              babelrc: false,
+              presets: ["@babel/preset-typescript"],
+              plugins: ["@babel/plugin-transform-modules-commonjs"],
+              sourceType: "module",
+            });
+
+            if (result?.code) {
+              const freshModule = new (require("module"))(
+                resolved,
+                parent,
+              ) as NodeModuleWithCompile;
+              freshModule._compile(result.code, resolved);
+              require.cache[resolved] = freshModule as any;
+              return (freshModule as any).exports;
+            }
+          }
+        } catch {
+          // Pacote externo que não é necessário para os tokens — silencia
+        }
+
+        // Fallback: retorna mock vazio para não travar o carregamento do config
+        return {};
+      }
+
+      throw err;
+    }
   };
 
   (require.extensions as any)[".ts"] = tsHandler;
