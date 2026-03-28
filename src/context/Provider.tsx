@@ -87,18 +87,24 @@ const UIContext = createContext<UIContextType<StyledConfig> | null>(null);
 export function StampdUIProvider<TConfig extends StyledConfig>({
   children,
   config,
+  defaultTheme = "light",
+  highContrast: initialHighContrast = false,
 }: {
   children: React.ReactNode;
   config: TConfig;
+  defaultTheme?: "light" | "dark";
+  highContrast?: boolean;
 }) {
   const getSystemMode = (): ThemeMode.LIGHT | ThemeMode.DARK =>
     Appearance.getColorScheme() === "dark" ? ThemeMode.DARK : ThemeMode.LIGHT;
 
-  const [themeMode, setThemeMode] = useState<ThemeMode>(ThemeMode.SYSTEM);
+  const [themeMode, setThemeMode] = useState<ThemeMode>(
+    defaultTheme === "dark" ? ThemeMode.DARK : ThemeMode.LIGHT,
+  );
   const [resolvedMode, setResolvedMode] = useState<
     ThemeMode.LIGHT | ThemeMode.DARK
   >(getSystemMode);
-  const [highContrast, setHighContrast] = useState(false);
+  const [highContrast, setHighContrast] = useState(initialHighContrast);
   const [fontScaleMode, setFontScaleMode] = useState<FontScaleMode>(
     FontScaleMode.SYSTEM,
   );
@@ -129,17 +135,27 @@ export function StampdUIProvider<TConfig extends StyledConfig>({
   }, [fontScaleMode]);
 
   const activeTheme = useMemo(() => {
-    const base = {
-      ...config.tokens,
-      ...(resolvedMode === ThemeMode.DARK
-        ? config.theme.dark
-        : config.theme.light),
-      ...(config.fonts ? { fonts: config.fonts } : {}),
-    } as ResolvedTheme<TConfig>;
-    if (highContrast && config.theme.highContrast) {
-      return deepMerge(base, config.theme.highContrast as Record<string, any>);
+    try {
+      const base = {
+        ...(config.tokens ?? {}),
+        ...(resolvedMode === ThemeMode.DARK
+          ? (config.theme?.dark ?? {})
+          : (config.theme?.light ?? {})),
+        ...(config.fonts ? { fonts: config.fonts } : {}),
+      } as ResolvedTheme<TConfig>;
+      if (highContrast && config.theme?.highContrast) {
+        return deepMerge(base, config.theme.highContrast as Record<string, any>);
+      }
+      return base;
+    } catch (err: any) {
+      console.error(
+        `[stampd] StampdUIProvider: erro ao calcular o tema ativo.\n` +
+        `  mode=${resolvedMode} highContrast=${highContrast}\n` +
+        `  Verifique se config.tokens, config.theme.light e config.theme.dark estão definidos.\n` +
+        `  Detalhe: ${err?.message ?? err}`,
+      );
+      return {} as ResolvedTheme<TConfig>;
     }
-    return base;
   }, [resolvedMode, highContrast]);
 
   const value: UIContextType<TConfig> = {

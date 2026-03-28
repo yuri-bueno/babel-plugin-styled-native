@@ -1,6 +1,6 @@
 {
   "name": "stampd",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "React Native styling stamped at compile time — design tokens resolved to literal values in your bundle, zero runtime overhead, light/dark/high-contrast built in.",
   "keywords": [
     "babel-plugin",

@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(grep -n \"babel-plugin-styled-native\\\\|from ''''stampd\\\\|from stampd\" c:/trabalho/plugin-babel-styled/expo-test-app/stampd.config.ts)"
     ]
   }
 }

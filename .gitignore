@@ -10,4 +10,5 @@ test/input.tsx
 test/output.js
 test/styled.config.ts
 test/useStyled.d.ts
-stampd-0.1.0.tgz
+*.tgz
+stampd-types.d.ts

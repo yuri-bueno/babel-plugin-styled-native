@@ -95,16 +95,42 @@ function buildNormalizedVariantsAST(
 }
 
 /**
- * Obtém o nome da variável declarada: `const ButtonText = Styled.Text(...)` → "ButtonText"
+ * djb2 hash — retorna string base-36 de 5 chars, leve e determinístico.
+ * Usado para tornar nomes de variáveis de módulo únicos entre arquivos.
+ */
+function djb2(str: string): string {
+  let h = 5381;
+  for (let i = 0; i < str.length; i++) {
+    h = ((h << 5) + h + str.charCodeAt(i)) >>> 0;
+  }
+  return h.toString(36).slice(0, 5);
+}
+
+/**
+ * Obtém o nome semântico do Styled.X(...) a partir do AST:
+ *   const ButtonText = Styled.Text(...)      → "ButtonText"
+ *   export const GCS = { badge: Styled.View(...) }  → "badge"
+ *   { a: { b: Styled.View(...) } }           → "b"
+ * Sobe pela cadeia de ObjectProperty até encontrar VariableDeclarator ou esgotar.
  */
 function getDeclarationName(
   path: NodePath<t.CallExpression>,
   fallback: string,
 ): string {
-  const parent = path.parentPath;
-  if (parent?.isVariableDeclarator() && t.isIdentifier(parent.node.id)) {
-    return parent.node.id.name;
+  let cur: NodePath | null = path.parentPath;
+
+  while (cur) {
+    if (cur.isVariableDeclarator() && t.isIdentifier(cur.node.id)) {
+      return cur.node.id.name;
+    }
+    if (cur.isObjectProperty()) {
+      const key = (cur.node as t.ObjectProperty).key;
+      if (t.isIdentifier(key)) return key.name;
+      if (t.isStringLiteral(key)) return key.value;
+    }
+    cur = cur.parentPath;
   }
+
   return fallback;
 }
 
@@ -130,10 +156,12 @@ export function transformStyledWithVariants(
   style: ExtractedStyle,
   variants: ExtractedVariants,
   attrs: ExtractedAttrs | null = null,
+  fileHash = "",
 ) {
   const varName = getDeclarationName(path, componentName);
-  const baseStyleName = `__baseStyle_${varName}`;
-  const variantsName = `__variants_${varName}`;
+  const suffix = fileHash ? `${varName}_${fileHash}` : varName;
+  const baseStyleName = `__baseStyle_${suffix}`;
+  const variantsName = `__variants_${suffix}`;
   const variantKeys = variants.keys;
 
   // ── 1. Resolve base style e verifica se ainda precisa de theme ──────────
@@ -145,7 +173,7 @@ export function transformStyledWithVariants(
   const anyVariantNeedsTheme = Object.values(groupNeedsTheme).some(Boolean);
 
   // ── 2b. Resolve attrs ────────────────────────────────────────────────────
-  const attrsName = `__attrs_${varName}`;
+  const attrsName = `__attrs_${suffix}`;
   let attrsDecl: t.VariableDeclaration | null = null;
   let attrsNeedsTheme = false;
 

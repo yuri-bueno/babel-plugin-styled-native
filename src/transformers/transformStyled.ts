@@ -16,7 +16,7 @@ import { transformStyledWithVariants } from "./transformStyledWithVariants";
  * Transforma:
  * Styled.View(...) → componente React
  */
-export function transformStyled(path: NodePath<t.CallExpression>) {
+export function transformStyled(path: NodePath<t.CallExpression>, fileHash = "") {
   const callee = path.get("callee");
 
   if (!callee.isMemberExpression()) return;
@@ -35,7 +35,7 @@ export function transformStyled(path: NodePath<t.CallExpression>) {
   // Se houver variants, delega para o transformer especializado
   const variants = extractVariants(config);
   if (variants) {
-    transformStyledWithVariants(path, componentName.node.name, style, variants, attrs);
+    transformStyledWithVariants(path, componentName.node.name, style, variants, attrs, fileHash);
     return;
   }
 
